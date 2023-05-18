@@ -108,6 +108,9 @@ public class SocketIOConfig {
     }
 
     private List<Evenement> searchObjectsByReference(String ref) {
+        // chercher dans redis
+        // si redis vide ==> chercher dans la bd et remplir redi
+        // return dakechi mn redis
         return evenementDao.findBySalleBlocOperatoirReference(ref);
     }
 
