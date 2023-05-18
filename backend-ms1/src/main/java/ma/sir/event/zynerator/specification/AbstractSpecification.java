@@ -26,9 +26,7 @@ public abstract class AbstractSpecification<Criteria extends BaseCriteria, T ext
     }
 
     public void addEtablissementPredicate() {
-        if (criteria.getEtablissementId() != null && criteria.getEtablissementId() > 0) {
-            predicates.add(builder.equal(root.<Long>get("etablissement"), criteria.getEtablissementId()));
-        }
+
     }
 
     public abstract void constructPredicates();

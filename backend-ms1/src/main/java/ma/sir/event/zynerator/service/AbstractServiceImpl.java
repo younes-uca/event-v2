@@ -217,24 +217,13 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
 
     public List<T> findByCriteria(CRITERIA criteria) {
         List<T> content = null;
-        if (criteria != null) {
-            addEtablissementConstraint(criteria);
-            AbstractSpecification<CRITERIA, T> mySpecification = constructSpecification(criteria);
-            if (criteria.isPeagable()) {
-                Pageable pageable = PageRequest.of(0, criteria.getMaxResults());
-                content = dao.findAll(mySpecification, pageable).getContent();
-            } else {
-                content = dao.findAll(mySpecification);
-            }
-        } else {
-            content = dao.findAll();
-        }
+
         return content;
 
     }
 
     public List<T> findPaginatedByCriteria(CRITERIA criteria, int page, int pageSize, String order, String sortField) {
-        addEtablissementConstraint(criteria);
+        //addEtablissementConstraint(criteria);
         AbstractSpecification<CRITERIA, T> mySpecification = constructSpecification(criteria);
         order = (order != null && !order.isEmpty()) ? order : "desc";
         sortField = (sortField != null && !sortField.isEmpty()) ? sortField : "id";
@@ -243,7 +232,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
     }
 
     public int getDataSize(CRITERIA criteria) {
-        addEtablissementConstraint(criteria);
+        //addEtablissementConstraint(criteria);
         AbstractSpecification<CRITERIA, T> mySpecification = constructSpecification(criteria);
         mySpecification.setDistinct(true);
         return ((Long) dao.count(mySpecification)).intValue();
@@ -369,11 +358,11 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
         }
     }
 
-    public Long getEtablissementId() {
+    /*public Long getEtablissementId() {
         User currentUser = getCurrentUser();
         return null;
     }
-
+*/
     //************************************************** UPDATE ***********************************
     public List<List<T>> getToBeSavedAndToBeDeleted(List<T> oldList, List<T> newList) {
         List<List<T>> result = new ArrayList<>();

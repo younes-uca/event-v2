@@ -7,6 +7,7 @@ import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
+import ma.sir.event.bean.core.Evenement;
 import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.dao.facade.core.EvenementDao;
 import ma.sir.event.zynerator.security.bean.User;
@@ -18,10 +19,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -57,6 +55,7 @@ public class SocketIOConfig {
             if (ref != null) {
                 List<EvenementRedis> matchedObjects = searchObjectsByReference(ref);
                 // Send the list of matching objects to the client
+
                 client.sendEvent("matched_objects", matchedObjects);
                 System.out.println("matchedObjects = " + matchedObjects);
             }
@@ -110,32 +109,58 @@ public class SocketIOConfig {
         return server;
     }
 
-   /* private List<Evenement> searchObjectsByReference(String ref) {
+
+
+
+
+  private List<EvenementRedis> searchObjectsByReference(String ref) {
+      List<EvenementRedis> evenementRedisList = template.opsForHash()
+              .values(ref)
+              .map(object -> (EvenementRedis) object)
+              .collectList()
+              .block();
+
+      if (evenementRedisList != null && !evenementRedisList.isEmpty()) {
+          return ImmutableList.copyOf(evenementRedisList);
+      } else {
+          List<Evenement> evenementList = evenementDao.findBySalleBlocOperatoirReference(ref);
+          if (evenementList != null && !evenementList.isEmpty()) {
+              Map<String, EvenementRedis> evenementRedisMap = new HashMap<>();
+              for (EvenementRedis evenementRedis : evenementRedisList) {
+                  evenementRedisMap.put(String.valueOf(evenementRedis.getId()), evenementRedis);
+              }
+              template.opsForHash()
+                      .putAll(ref, evenementRedisMap)
+                      .block();
+              return evenementRedisList;
+          } else {
+              return Collections.emptyList();
+          }
+      }
+  }
+
+
+
+    private List<Evenement> searchObjectsByReferenceInDataBase(String ref) {
         // chercher dans redis
         // si redis vide ==> chercher dans la bd et remplir redis
         // return dakechi mn redis
         return evenementDao.findBySalleBlocOperatoirReference(ref);
-    }*/
-
-
-    private List<EvenementRedis> searchObjectsByReference(String ref) {
-        EvenementRedis evenementRedis = (EvenementRedis) template.opsForHash().values(ref)
-                .map(object -> (EvenementRedis) object)
-                .switchIfEmpty(Flux.defer(() -> {
-                    // Search in the database
-                    return Flux.fromIterable(evenementDao.findBySalleBlocOperatoirReference(ref))
-                            .flatMap(evenement -> template.opsForHash().put(evenement.getSalle().getBlocOperatoir().getReference(), String.valueOf(evenement.getReference()), evenement))
-                            .collectList()
-                            .flatMapMany(savedEvents -> template.opsForHash().values(ref))
-                            .map(object -> (EvenementRedis) object);
-                }))
-                .blockLast();
-        return ImmutableList.of(evenementRedis);
-
     }
 
 
+    private List<EvenementRedis> searchObjectsByReferenceInRedis(String ref) {
+        List<EvenementRedis> evenementRedisList = template.opsForHash().values(ref)
+                .map(object -> (EvenementRedis) object)
+                .collectList()
+                .block();
 
+        if (evenementRedisList != null) {
+            return ImmutableList.copyOf(evenementRedisList);
+        } else {
+            return Collections.emptyList();
+        }
+    }
 
 
 

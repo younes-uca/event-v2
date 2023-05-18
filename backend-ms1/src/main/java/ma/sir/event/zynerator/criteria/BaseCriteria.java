@@ -7,7 +7,6 @@ import java.util.List;
 
 public class BaseCriteria implements Serializable {
 
-    protected Long etablissementId;
     protected Long id;
     protected Long notId;
     protected String[] orderByAsc;
@@ -27,13 +26,7 @@ public class BaseCriteria implements Serializable {
     protected String[] excludes;
 
 
-    public Long getEtablissementId() {
-        return this.etablissementId;
-    }
 
-    public void setEtablissementId(Long etablissementId) {
-        this.etablissementId = etablissementId;
-    }
 
 
     public Long getId() {
