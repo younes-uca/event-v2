@@ -8,7 +8,6 @@ public class BaseDto implements Serializable {
 
     protected Long id;
     protected String label;
-    protected EtablissementDto etablissementDto;
     protected int maxLevel = 2;
 
     /**
@@ -21,13 +20,7 @@ public class BaseDto implements Serializable {
         this.id = id;
     }
 
-    public EtablissementDto getEtablissementDto() {
-        return etablissementDto;
-    }
 
-    public void setEtablissementDto(EtablissementDto etablissementDto) {
-        this.etablissementDto = etablissementDto;
-    }
 
     @Override
     public boolean equals(Object object) {

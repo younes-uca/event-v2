@@ -1,7 +1,12 @@
 package ma.sir.event.bean.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ma.sir.event.ws.dto.EvenementStateDto;
 import ma.sir.event.ws.dto.SalleDto;
+import ma.sir.event.zynerator.audit.AuditBusinessObject;
+import ma.sir.event.zynerator.bean.BusinessObject;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
@@ -10,7 +15,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @RedisHash("Evenement")
-public class EvenementRedis  implements Serializable {
+public class EvenementRedis extends AuditBusinessObject implements Serializable {
     @Id
     private Long id;
 
@@ -24,6 +29,8 @@ public class EvenementRedis  implements Serializable {
     private SalleDto salle ;
 
     private EvenementStateDto evenementState ;
+
+    private String label;
 
     public Long getId() {
         return id;
@@ -79,5 +86,13 @@ public class EvenementRedis  implements Serializable {
 
     public void setEvenementState(EvenementStateDto evenementState) {
         this.evenementState = evenementState;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

@@ -1,5 +1,6 @@
 package  ma.sir.event.ws.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ma.sir.event.zynerator.audit.Log;
 import ma.sir.event.zynerator.dto.AuditBaseDto;
 import com.fasterxml.jackson.annotation.JsonInclude;

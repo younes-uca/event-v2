@@ -4,16 +4,15 @@ import com.corundumstudio.socketio.*;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
-import io.socket.emitter.Emitter;
 import lombok.extern.log4j.Log4j2;
-import ma.sir.event.bean.core.Evenement;
 import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.dao.facade.core.EvenementDao;
-import ma.sir.event.service.impl.admin.EvenementAdminRedisServiceImpl;
 import ma.sir.event.zynerator.security.bean.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import reactor.core.publisher.Flux;
@@ -25,7 +24,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import io.socket.client.Socket;
 
 @CrossOrigin("*")
 @Component
@@ -34,9 +32,12 @@ import io.socket.client.Socket;
 public class SocketIOConfig {
     private SocketIOServer server;
     public Map<String, List<String>> sessions = new ConcurrentHashMap<>();
+    @Autowired
+    private ReactiveRedisTemplate<String, EvenementRedis> template;
 
     @Autowired
     private EvenementDao evenementDao;
+
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
@@ -53,11 +54,13 @@ public class SocketIOConfig {
         server.addEventListener("userDisconnect", User.class, onDisConnect);
         server.addEventListener("search_objects", String.class, (client, ref, ackSender) -> {
             // Perform search logic to retrieve objects with the same reference
-            List<Evenement> matchedObjects = searchObjectsByReference(ref);
+            if (ref != null) {
+                List<EvenementRedis> matchedObjects = searchObjectsByReference(ref);
+                // Send the list of matching objects to the client
+                client.sendEvent("matched_objects", matchedObjects);
+                System.out.println("matchedObjects = " + matchedObjects);
+            }
 
-            // Send the list of matching objects to the client
-            client.sendEvent("matched_objects", matchedObjects);
-            System.out.println("matchedObjects = " + matchedObjects);
         });
         server.addConnectListener(new ConnectListener() {
             @Override
@@ -107,12 +110,38 @@ public class SocketIOConfig {
         return server;
     }
 
-    private List<Evenement> searchObjectsByReference(String ref) {
+   /* private List<Evenement> searchObjectsByReference(String ref) {
         // chercher dans redis
-        // si redis vide ==> chercher dans la bd et remplir redi
+        // si redis vide ==> chercher dans la bd et remplir redis
         // return dakechi mn redis
         return evenementDao.findBySalleBlocOperatoirReference(ref);
+    }*/
+
+
+    private List<EvenementRedis> searchObjectsByReference(String ref) {
+        EvenementRedis evenementRedis = (EvenementRedis) template.opsForHash().values(ref)
+                .map(object -> (EvenementRedis) object)
+                .switchIfEmpty(Flux.defer(() -> {
+                    // Search in the database
+                    return Flux.fromIterable(evenementDao.findBySalleBlocOperatoirReference(ref))
+                            .flatMap(evenement -> template.opsForHash().put(evenement.getSalle().getBlocOperatoir().getReference(), String.valueOf(evenement.getReference()), evenement))
+                            .collectList()
+                            .flatMapMany(savedEvents -> template.opsForHash().values(ref))
+                            .map(object -> (EvenementRedis) object);
+                }))
+                .blockLast();
+        return ImmutableList.of(evenementRedis);
+
     }
+
+
+
+
+
+
+
+
+
 
 
     public DataListener<User> onConnect = (socketIOClient, user, ackRequest) -> {
