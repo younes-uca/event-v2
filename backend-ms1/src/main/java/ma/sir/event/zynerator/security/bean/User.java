@@ -1,6 +1,5 @@
 package ma.sir.event.zynerator.security.bean;
 
-import ma.sir.event.zynerator.bean.Etablissement;
 import ma.sir.event.zynerator.audit.AuditBusinessObject;
 
 import java.time.LocalDateTime;
@@ -14,15 +13,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 import javax.persistence.Table;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 import javax.persistence.*;
 
