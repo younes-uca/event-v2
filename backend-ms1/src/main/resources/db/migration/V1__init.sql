@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : jeu. 18 mai 2023 à 11:40
+-- Généré le : jeu. 18 mai 2023 à 22:51
 -- Version du serveur : 10.4.28-MariaDB
 -- Version de PHP : 8.0.28
 
@@ -71,39 +71,6 @@ CREATE TABLE `bloc_operatoir_seq` (
 INSERT INTO `bloc_operatoir_seq` (`next_val`) VALUES
 (19),
 (19);
-
--- --------------------------------------------------------
-
---
--- Structure de la table `etablissement`
---
-
-CREATE TABLE `etablissement` (
-  `id` bigint(20) NOT NULL,
-  `createdby` varchar(255) DEFAULT NULL,
-  `createdon` datetime DEFAULT NULL,
-  `updatedby` varchar(255) DEFAULT NULL,
-  `updatedon` datetime DEFAULT NULL,
-  `code` varchar(255) DEFAULT NULL,
-  `libelle` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `etablissement_seq`
---
-
-CREATE TABLE `etablissement_seq` (
-  `next_val` bigint(20) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `etablissement_seq`
---
-
-INSERT INTO `etablissement_seq` (`next_val`) VALUES
-(1);
 
 -- --------------------------------------------------------
 
@@ -353,11 +320,11 @@ CREATE TABLE `salle` (
 --
 
 INSERT INTO `salle` (`id`, `createdby`, `createdon`, `updatedby`, `updatedon`, `code`, `reference`, `action_type`, `data`, `date`, `object_id`, `object_name`, `user_id`, `username`, `bloc_operatoir`) VALUES
-(12, '', '2023-05-16 11:39:20', '', NULL, 'salle1', 'salle1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
-(13, '', '2023-05-16 11:39:29', '', NULL, 'salle1', 'salle1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
-(14, '', '2023-05-16 11:39:33', '', NULL, 'salle1', 'salle1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 11),
-(15, '', '2023-05-16 11:39:42', '', NULL, 'salle1', 'salle1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 11),
-(16, '', '2023-05-16 11:39:45', '', NULL, 'salle1', 'salle1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10);
+(12, '', '2023-05-16 11:39:20', 'admin', '2023-05-18 20:12:51', 'salle3-B1', 'salle3-B1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+(13, '', '2023-05-16 11:39:29', 'admin', '2023-05-18 20:12:38', 'salle2-B1', 'salle2-B1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+(14, '', '2023-05-16 11:39:33', 'admin', '2023-05-18 20:12:21', 'salle2-B2', 'salle2-B2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 11),
+(15, '', '2023-05-16 11:39:42', 'admin', '2023-05-18 20:12:11', 'salle1-B2', 'salle1-B2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 11),
+(16, '', '2023-05-16 11:39:45', 'admin', '2023-05-18 20:12:03', 'salle1-B1', 'salle1-B1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10);
 
 -- --------------------------------------------------------
 
@@ -418,16 +385,15 @@ CREATE TABLE `user_app` (
   `password_changed` bit(1) NOT NULL,
   `prenom` varchar(255) DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  `username` varchar(255) DEFAULT NULL,
-  `etablissement` bigint(20) DEFAULT NULL
+  `username` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Déchargement des données de la table `user_app`
 --
 
-INSERT INTO `user_app` (`id`, `created_by`, `created_on`, `updated_by`, `updated_on`, `account_non_expired`, `account_non_locked`, `created_at`, `credentials_non_expired`, `email`, `enabled`, `nom`, `password`, `password_changed`, `prenom`, `updated_at`, `username`, `etablissement`) VALUES
-(22, NULL, '2023-05-15 15:11:44', NULL, NULL, b'1', b'1', '2023-05-15 15:11:44', b'1', 'admin', b'1', 'admin', '$2a$10$J14.XzuWna6IRmEcrnq2Re4RcUWDsWhS.THG42lbyoSdR.ciU7j2y', b'0', 'admin', NULL, 'admin', NULL);
+INSERT INTO `user_app` (`id`, `created_by`, `created_on`, `updated_by`, `updated_on`, `account_non_expired`, `account_non_locked`, `created_at`, `credentials_non_expired`, `email`, `enabled`, `nom`, `password`, `password_changed`, `prenom`, `updated_at`, `username`) VALUES
+(22, NULL, '2023-05-15 15:11:44', NULL, NULL, b'1', b'1', '2023-05-15 15:11:44', b'1', 'admin', b'1', 'admin', '$2a$10$J14.XzuWna6IRmEcrnq2Re4RcUWDsWhS.THG42lbyoSdR.ciU7j2y', b'0', 'admin', NULL, 'admin');
 
 --
 -- Index pour les tables déchargées
@@ -437,12 +403,6 @@ INSERT INTO `user_app` (`id`, `created_by`, `created_on`, `updated_by`, `updated
 -- Index pour la table `bloc_operatoir`
 --
 ALTER TABLE `bloc_operatoir`
-  ADD PRIMARY KEY (`id`);
-
---
--- Index pour la table `etablissement`
---
-ALTER TABLE `etablissement`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -496,8 +456,7 @@ ALTER TABLE `users_roles`
 -- Index pour la table `user_app`
 --
 ALTER TABLE `user_app`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `FK2xblr2jfuwcj4ktkjxbf8ir13` (`etablissement`);
+  ADD PRIMARY KEY (`id`);
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;
 
