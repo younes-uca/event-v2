@@ -127,7 +127,7 @@ public class SocketIOConfig {
           if (evenementList != null && !evenementList.isEmpty()) {
               Map<String, EvenementRedis> evenementRedisMap = new HashMap<>();
               for (EvenementRedis evenementRedis : evenementRedisList) {
-                  evenementRedisMap.put(String.valueOf(evenementRedis.getId()), evenementRedis);
+                  evenementRedisMap.put(String.valueOf(evenementRedis.getReference()), evenementRedis);
               }
               template.opsForHash()
                       .putAll(ref, evenementRedisMap)
@@ -138,6 +138,9 @@ public class SocketIOConfig {
           }
       }
   }
+
+
+
 
 
 
