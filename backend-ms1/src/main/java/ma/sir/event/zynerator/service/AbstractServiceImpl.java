@@ -15,7 +15,6 @@ import ma.sir.event.zynerator.specification.AbstractSpecification;
 import ma.sir.event.zynerator.util.ListUtil;
 import ma.sir.event.zynerator.util.RefelexivityUtil;
 import ma.sir.event.zynerator.util.StringUtil;
-import ma.sir.event.zynerator.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -91,7 +90,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
                 }
             }
         }
-    return result;
+        return result;
     }
 
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class, readOnly = false)
@@ -143,7 +142,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
     }
 
     public T findById(Long id) {
-    Optional<T> item = dao.findById(id);
+        Optional<T> item = dao.findById(id);
         return item.orElse(null);
     }
 
@@ -172,7 +171,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
         List<T> list = new ArrayList<>();
         for (T t : items) {
             T founded = findByReferenceEntity(t);
-                if (founded == null) {
+            if (founded == null) {
                 findOrSaveAssociatedObject(t);
                 dao.save(t);
             } else {
@@ -210,7 +209,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
             for (T t : list) {
                 deleteAssociatedLists(t.getId());
                 dao.deleteById(t.getId()); // il fait find by id apres delete !!!
-            //constructAndSaveHistory(dto, ACTION_TYPE.DELETE); TO DO
+                //constructAndSaveHistory(dto, ACTION_TYPE.DELETE); TO DO
             }
         }
     }
@@ -253,7 +252,7 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
 
     public List<T> findAll() {
         return dao.findAll();
-        }
+    }
 
     public List<T> findAllOptimized() {
         return dao.findAll();
@@ -355,26 +354,24 @@ public abstract class AbstractServiceImpl<T extends AuditBusinessObject, H exten
     private void addEtablissementConstraint(CRITERIA criteria) {
         Object userInfo = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (userInfo instanceof User) {
-        User currentUser = (User) userInfo;
-        criteria.setEtablissementId(currentUser.getEtablissement() != null ? currentUser.getEtablissement().getId() : null);
+            User currentUser = (User) userInfo;
         }
     }
 
     public User getCurrentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal != null && principal instanceof User) {
-        return (User) principal;
+            return (User) principal;
         } else if (principal != null && principal instanceof String) {
-        return userService.findByUsername(principal.toString());
+            return userService.findByUsername(principal.toString());
         } else {
-        return null;
+            return null;
         }
     }
 
     public Long getEtablissementId() {
         User currentUser = getCurrentUser();
-        Long etablissementId = (currentUser != null && currentUser.getEtablissement() != null) ? currentUser.getEtablissement().getId() : null;
-        return etablissementId == null ? 1L : etablissementId; // TODO: if conneceted user is null exception
+        return null;
     }
 
     //************************************************** UPDATE ***********************************
