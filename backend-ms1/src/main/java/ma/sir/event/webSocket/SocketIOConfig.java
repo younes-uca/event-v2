@@ -10,13 +10,13 @@ import lombok.extern.log4j.Log4j2;
 import ma.sir.event.bean.core.Evenement;
 import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.dao.facade.core.EvenementDao;
+import ma.sir.event.ws.converter.EvenementRedisConverter;
 import ma.sir.event.zynerator.security.bean.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -110,35 +110,40 @@ public class SocketIOConfig {
     }
 
 
+    private List<EvenementRedis> searchObjectsByReference(String ref) {
+        List<EvenementRedis> evenementRedisList = template.opsForHash()
+                .values(ref)
+                .map(object -> (EvenementRedis) object)
+                .collectList()
+                .block();
 
+        if (evenementRedisList != null && !evenementRedisList.isEmpty()) {
+            return ImmutableList.copyOf(evenementRedisList);
+        } else {
+            List<Evenement> evenementList = evenementDao.findBySalleBlocOperatoirReference(ref);
+            if (evenementList != null && !evenementList.isEmpty()) {
+                Map<String, List<EvenementRedis>> evenementRedisMap = new HashMap<>();
+                List<EvenementRedis> evenementRedis = convert(evenementList);
+                evenementRedisMap.put(ref, evenementRedis);
+                template.opsForHash()
+                        .putAll(ref, evenementRedisMap)
+                        .block();
+                return evenementRedisList;
+            } else {
+                return Collections.emptyList();
+            }
+        }
+    }
 
-
-  private List<EvenementRedis> searchObjectsByReference(String ref) {
-      List<EvenementRedis> evenementRedisList = template.opsForHash()
-              .values(ref)
-              .map(object -> (EvenementRedis) object)
-              .collectList()
-              .block();
-
-      if (evenementRedisList != null && !evenementRedisList.isEmpty()) {
-          return ImmutableList.copyOf(evenementRedisList);
-      } else {
-          List<Evenement> evenementList = evenementDao.findBySalleBlocOperatoirReference(ref);
-          if (evenementList != null && !evenementList.isEmpty()) {
-              Map<String, EvenementRedis> evenementRedisMap = new HashMap<>();
-              for (EvenementRedis evenementRedis : evenementRedisList) {
-                  evenementRedisMap.put(String.valueOf(evenementRedis.getId()), evenementRedis);
-              }
-              template.opsForHash()
-                      .putAll(ref, evenementRedisMap)
-                      .block();
-              return evenementRedisList;
-          } else {
-              return Collections.emptyList();
-          }
-      }
-  }
-
+    private List<EvenementRedis> convert(List<Evenement> evenementList) {
+        List<EvenementRedis> res = new ArrayList<>();
+        if (evenementList != null) {
+            for (Evenement evenement : evenementList) {
+                res.add(evenementRedisConverter.toDto(evenement));
+            }
+        }
+        return res;
+    }
 
 
     private List<Evenement> searchObjectsByReferenceInDataBase(String ref) {
@@ -161,12 +166,6 @@ public class SocketIOConfig {
             return Collections.emptyList();
         }
     }
-
-
-
-
-
-
 
 
     public DataListener<User> onConnect = (socketIOClient, user, ackRequest) -> {
@@ -237,6 +236,9 @@ public class SocketIOConfig {
     public void stopSocketIOServer() {
         this.server.stop();
     }
+
+    @Autowired
+    private EvenementRedisConverter evenementRedisConverter;
 
     public List<String> getConnectedUsers(String key) {
         return sessions.get(key);
