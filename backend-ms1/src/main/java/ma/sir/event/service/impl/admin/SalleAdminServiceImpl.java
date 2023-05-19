@@ -38,6 +38,11 @@ SalleHistoryDao> implements SalleAdminService {
         return dao.deleteByBlocOperatoirId(id);
     }
 
+    @Override
+    public Salle finByReference(String reference) {
+        return dao.findByReference(reference);
+    }
+
     public void configure() {
         super.configure(Salle.class,SalleHistory.class, SalleHistoryCriteria.class, SalleSpecification.class);
     }

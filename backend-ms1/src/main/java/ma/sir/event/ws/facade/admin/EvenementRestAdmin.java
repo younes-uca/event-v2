@@ -165,7 +165,8 @@ private SocketIOServer server;
 //       return ResponseEntity.ok().build();
        String referenceBlocOperatoir = dto.getSalle().getBlocOperatoir().getReference();
        Evenement evenement = converter.toItem(dto);
-       service.create(evenement);
+       service.createAndSendRedis(evenement);
+
        Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
                d.getHandshakeData().getSingleUrlParam("key").equals(referenceBlocOperatoir));
        SocketIOClient ioClient;
@@ -174,6 +175,7 @@ private SocketIOServer server;
            HandshakeData handshakeData = ioClient.getHandshakeData();
            String key = handshakeData.getSingleUrlParam("key");
            ioClient.sendEvent("matched_objects", evenement);
+
        } catch (NoSuchElementException e) {
            e.printStackTrace();
        }

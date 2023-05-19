@@ -8,6 +8,8 @@ import ma.sir.event.zynerator.service.IService;
 
 public interface EvenementAdminService extends  IService<Evenement,EvenementCriteria, EvenementHistoryCriteria>  {
 
+    Evenement createAndSendRedis(Evenement evenement);
+
     List<Evenement> findBySalleId(Long id);
     int deleteBySalleId(Long id);
     List<Evenement> findByEvenementStateId(Long id);

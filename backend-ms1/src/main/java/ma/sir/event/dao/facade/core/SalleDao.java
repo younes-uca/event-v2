@@ -20,4 +20,6 @@ public interface SalleDao extends AbstractRepository<Salle,Long>  {
 
     @Query("SELECT NEW Salle(item.id,item.reference) FROM Salle item")
     List<Salle> findAllOptimized();
+
+    Salle findByReference(String reference);
 }
