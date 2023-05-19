@@ -68,7 +68,7 @@ public class EvenementAdminRedisServiceImpl {
     }
 
     private BlocOperatoirDto getBlocOperatoir(EvenementRedis evenement) {
-        return evenement.getSalle().getBlocOperatoir();
+        return evenement.getSalle() == null ? null : evenement.getSalle().getBlocOperatoir();
     }
 
     private String getBlocOperatoirReference(EvenementRedis evenement) {
@@ -78,9 +78,6 @@ public class EvenementAdminRedisServiceImpl {
         }
         return null;
     }
-
-
-
 
 
 }

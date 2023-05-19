@@ -30,6 +30,7 @@ public class EvenementAdminServiceImpl extends AbstractServiceImpl<Evenement, Ev
     @Override
     public Evenement createAndSendRedis(Evenement evenement) {
         Evenement myEvenement = create(evenement);
+        evenementRedisConverter.initObject(true);
         EvenementRedis evenementRedis = evenementRedisConverter.toDto(myEvenement);
         evenementAdminRedisService.save(evenementRedis);
         return myEvenement;
