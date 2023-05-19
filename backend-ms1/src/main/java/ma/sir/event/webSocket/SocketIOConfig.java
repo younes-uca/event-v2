@@ -12,6 +12,7 @@ import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.dao.facade.core.EvenementDao;
 import ma.sir.event.service.impl.admin.EvenementAdminRedisServiceImpl;
 import ma.sir.event.zynerator.security.bean.User;
+import org.apache.poi.ss.formula.functions.Even;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,8 @@ public class SocketIOConfig {
 
     @Autowired
     private EvenementDao evenementDao;
+    @Autowired
+    private EvenementAdminRedisServiceImpl evenementAdminRedisService;
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
@@ -48,34 +51,35 @@ public class SocketIOConfig {
         config.setAllowCustomRequests(true);
         config.setUpgradeTimeout(60000); // set the upgrade timeout to 1h
         server = new SocketIOServer(config);
-        server.addEventListener("message", String.class, onSendMessage);
+//        server.addEventListener("message", String.class, onSendMessage);
         server.addEventListener("userConnect", User.class, onConnect);
         server.addEventListener("userDisconnect", User.class, onDisConnect);
-        server.addEventListener("search_objects", String.class, (client, ref, ackSender) -> {
-            // Perform search logic to retrieve objects with the same reference
-            List<Evenement> matchedObjects = searchObjectsByReference(ref);
-
-            // Send the list of matching objects to the client
-            client.sendEvent("matched_objects", matchedObjects);
-            System.out.println("matchedObjects = " + matchedObjects);
-        });
+//        server.addEventListener("search_objects", String.class, (client, ref, ackSender) -> {
+//            // Perform search logic to retrieve objects with the same reference
+//            List<Evenement> matchedObjects = searchObjectsByReference(ref);
+//
+//            // Send the list of matching objects to the client
+//            client.sendEvent("matched_objects", matchedObjects);
+//            System.out.println("matchedObjects = " + matchedObjects);
+//        });
+        server.addEventListener("search_objects",String.class,onSendMessageNew);
         server.addConnectListener(new ConnectListener() {
             @Override
             public void onConnect(SocketIOClient client) {
                 HandshakeData handshakeData = client.getHandshakeData();
-                String userId = handshakeData.getSingleUrlParam("userId");
+//                String userId = handshakeData.getSingleUrlParam("userId");
                 String key = handshakeData.getSingleUrlParam("key"); //blocop
-                log.info("new user connected with id =  " + userId);
+//                log.info("new user connected with id =  " + userId);
                 log.info("new user connected with key  =  " + key);
-                if (userId == null || key == null) {
+                if (key == null) {
                     // Connected user has ID userId
                     // Do something with the user ID
                 } else {
                     if (sessions.containsKey(key)) {
                         List<String> existingList = sessions.get(key);
-                        if (!existingList.contains(userId)) existingList.add(userId);
+                        if (!existingList.contains(key)) existingList.add(key);
                     } else {
-                        sessions.computeIfAbsent(key, k -> new ArrayList<>()).add(userId);
+                        sessions.computeIfAbsent(key, k -> new ArrayList<>()).add(key);
                     }
                     System.out.println("MAP SIZE FOR KEY= " + key + " IS " + sessions.get(key).size());
                 }
@@ -127,31 +131,61 @@ public class SocketIOConfig {
         ackRequest.sendAckData("You are disconnected");
         log.error(user.getUsername() + " disconnected");
     };
-
-
-    public DataListener<String> onSendMessage = new DataListener<String>() {
+//    public DataListener<String> onSendMessage = new DataListener<String>() {
+//        @Override
+//        public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
+//            Message messageObject = new Gson().fromJson(message, Message.class);
+//            log.info(messageObject.getKey());
+//
+//            // Convert the message to a byte array
+//            byte[] messageBytes = message.getBytes();
+//
+//            // Get the size of the message in bytes
+//            int messageSize = messageBytes.length;
+//            System.out.println("messageSize = " + messageSize);
+//
+//            /**
+//             * Sending message to target user
+//             * target user should subscribe the socket event with his/her name.
+//             * Send the same payload to user
+//             */
+//            List<String> clientId = sessions.get(messageObject.getKey());
+//            for (String str : clientId
+//            ) {
+//                Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
+//                        d.getHandshakeData().getSingleUrlParam("userId").equals(str));
+//                SocketIOClient ioClient;
+//                try {
+//                    ioClient = clientStream.findAny().get();
+//                } catch (NoSuchElementException e) {
+//                    e.printStackTrace();
+//                    log.error("Client not found !");
+//                    return;
+//                }
+//                HandshakeData handshakeData = ioClient.getHandshakeData();
+//                String userId = handshakeData.getSingleUrlParam("userId");
+//                String key = handshakeData.getSingleUrlParam("key");
+//                System.out.println("------------INFORMATION OF CLIENT ------------------------------------");
+//                System.out.println("key = " + key);
+//                System.out.println("userID = " + userId);
+//                System.out.println("----------------------------------------------------------------------");
+//
+//            }
+//
+//            /**
+//             * After sending message to target user we can send acknowledge to sender
+//             */
+//            acknowledge.sendAckData("Message send to target user successfully");
+//        }
+//    };
+    public DataListener<String> onSendMessageNew = new DataListener<String>() {
         @Override
         public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
-            Message messageObject = new Gson().fromJson(message, Message.class);
-            log.info(messageObject.getKey());
-
-            // Convert the message to a byte array
-            byte[] messageBytes = message.getBytes();
-
-            // Get the size of the message in bytes
-            int messageSize = messageBytes.length;
-            System.out.println("messageSize = " + messageSize);
-
-            /**
-             * Sending message to target user
-             * target user should subscribe the socket event with his/her name.
-             * Send the same payload to user
-             */
-            List<String> clientId = sessions.get(messageObject.getKey());
+            List<String> clientId = sessions.get(message);
             for (String str : clientId
             ) {
                 Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
-                        d.getHandshakeData().getSingleUrlParam("userId").equals(str));
+                        d.getHandshakeData().getSingleUrlParam("key").equals(str));
                 SocketIOClient ioClient;
                 try {
                     ioClient = clientStream.findAny().get();
@@ -161,19 +195,13 @@ public class SocketIOConfig {
                     return;
                 }
                 HandshakeData handshakeData = ioClient.getHandshakeData();
-                String userId = handshakeData.getSingleUrlParam("userId");
                 String key = handshakeData.getSingleUrlParam("key");
                 System.out.println("------------INFORMATION OF CLIENT ------------------------------------");
                 System.out.println("key = " + key);
-                System.out.println("userID = " + userId);
                 System.out.println("----------------------------------------------------------------------");
-                ioClient.sendEvent("message", message);
-
+                List<Evenement> matchedObjects = searchObjectsByReference(key);
+                ioClient.sendEvent("matched_objects", matchedObjects);
             }
-
-            /**
-             * After sending message to target user we can send acknowledge to sender
-             */
             acknowledge.sendAckData("Message send to target user successfully");
         }
     };

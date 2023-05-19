@@ -1,21 +1,21 @@
 package ma.sir.event.ws.facade.admin;
 
 
+import com.corundumstudio.socketio.HandshakeData;
+import com.corundumstudio.socketio.SocketIOClient;
+import com.corundumstudio.socketio.SocketIOServer;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import ma.sir.event.bean.core.Evenement;
 import ma.sir.event.bean.core.EvenementRedis;
-import ma.sir.event.bean.core.Salle;
 import ma.sir.event.bean.history.EvenementHistory;
 import ma.sir.event.dao.criteria.core.EvenementCriteria;
 import ma.sir.event.dao.criteria.history.EvenementHistoryCriteria;
-import ma.sir.event.dao.facade.core.EvenementDao;
 import ma.sir.event.service.facade.admin.EvenementAdminService;
 import ma.sir.event.service.facade.admin.SalleAdminService;
 import ma.sir.event.service.impl.admin.EvenementAdminRedisServiceImpl;
 import ma.sir.event.ws.converter.EvenementConverter;
 import ma.sir.event.ws.dto.EvenementDto;
-import ma.sir.event.ws.dto.SalleDto;
 import ma.sir.event.zynerator.controller.AbstractController;
 import ma.sir.event.zynerator.dto.AuditEntityDto;
 import ma.sir.event.zynerator.util.PaginatedList;
@@ -23,7 +23,10 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -111,54 +114,70 @@ public class EvenementRestAdmin extends AbstractController<Evenement, EvenementD
         }
     }*/
 
-
+    @Autowired
+private SocketIOServer server;
 
    @PostMapping("")
    public ResponseEntity<EvenementDto> save(@RequestBody EvenementDto dto) throws Exception {
-       String reference = dto.getReference();
+//       String reference = dto.getReference();
+//       String referenceBlocOperatoir = dto.getSalle().getBlocOperatoir().getReference();
+//
+//       Mono<EvenementRedis> evenementRedis = evenementAdminRedisService.findByReference(referenceBlocOperatoir, reference)
+//               .switchIfEmpty(Mono.just(new EvenementRedis()));
+//
+//       evenementRedis.subscribe(redis -> {
+//           if (redis.getId() == null) {
+//               ResponseEntity<EvenementDto> savedResponse = null;
+//               try {
+//                   savedResponse = super.save(dto);
+//                   EvenementDto savedDto = savedResponse.getBody();
+//                   EvenementRedis savedRedis = new EvenementRedis();
+//                   savedRedis.setId(savedDto.getId());
+//                   savedRedis.setReference(savedDto.getReference());
+//                   savedRedis.setDescription(savedDto.getDescription());
+//                   savedRedis.setEvenementState(savedDto.getEvenementState());
+//                   savedRedis.setSalle(savedDto.getSalle());
+//                   evenementAdminRedisService.save(savedRedis);
+//               } catch (Exception e) {
+//                   throw new RuntimeException(e);
+//               }
+//
+//               //return savedResponse;
+//           } else {
+//               ResponseEntity<EvenementDto> updatedResponse = null;
+//               try {
+//                   updatedResponse = super.update(dto);
+//                   EvenementDto updatedDto = updatedResponse.getBody();
+//                   EvenementRedis updatedRedis = new EvenementRedis();
+//                   updatedRedis.setId(updatedDto.getId());
+//                   updatedRedis.setReference(updatedDto.getReference());
+//                   updatedRedis.setDescription(updatedDto.getDescription());
+//                   updatedRedis.setEvenementState(updatedDto.getEvenementState());
+//                   updatedRedis.setSalle(updatedDto.getSalle());
+//                   evenementAdminRedisService.save(updatedRedis);
+//               } catch (Exception e) {
+//                   throw new RuntimeException(e);
+//               }
+//
+//               //return updatedResponse;
+//           }
+//       });
+//       return ResponseEntity.ok().build();
        String referenceBlocOperatoir = dto.getSalle().getBlocOperatoir().getReference();
-
-       Mono<EvenementRedis> evenementRedis = evenementAdminRedisService.findByReference(referenceBlocOperatoir, reference)
-               .switchIfEmpty(Mono.just(new EvenementRedis()));
-
-       evenementRedis.subscribe(redis -> {
-           if (redis.getId() == null) {
-               ResponseEntity<EvenementDto> savedResponse = null;
-               try {
-                   savedResponse = super.save(dto);
-                   EvenementDto savedDto = savedResponse.getBody();
-                   EvenementRedis savedRedis = new EvenementRedis();
-                   savedRedis.setId(savedDto.getId());
-                   savedRedis.setReference(savedDto.getReference());
-                   savedRedis.setDescription(savedDto.getDescription());
-                   savedRedis.setEvenementState(savedDto.getEvenementState());
-                   savedRedis.setSalle(savedDto.getSalle());
-                   evenementAdminRedisService.save(savedRedis);
-               } catch (Exception e) {
-                   throw new RuntimeException(e);
-               }
-
-               //return savedResponse;
-           } else {
-               ResponseEntity<EvenementDto> updatedResponse = null;
-               try {
-                   updatedResponse = super.update(dto);
-                   EvenementDto updatedDto = updatedResponse.getBody();
-                   EvenementRedis updatedRedis = new EvenementRedis();
-                   updatedRedis.setId(updatedDto.getId());
-                   updatedRedis.setReference(updatedDto.getReference());
-                   updatedRedis.setDescription(updatedDto.getDescription());
-                   updatedRedis.setEvenementState(updatedDto.getEvenementState());
-                   updatedRedis.setSalle(updatedDto.getSalle());
-                   evenementAdminRedisService.save(updatedRedis);
-               } catch (Exception e) {
-                   throw new RuntimeException(e);
-               }
-
-               //return updatedResponse;
-           }
-       });
-       return ResponseEntity.ok().build();
+       Evenement evenement = converter.toItem(dto);
+       service.create(evenement);
+       Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
+               d.getHandshakeData().getSingleUrlParam("key").equals(referenceBlocOperatoir));
+       SocketIOClient ioClient;
+       try {
+           ioClient = clientStream.findAny().get();
+           HandshakeData handshakeData = ioClient.getHandshakeData();
+           String key = handshakeData.getSingleUrlParam("key");
+           ioClient.sendEvent("matched_objects", evenement);
+       } catch (NoSuchElementException e) {
+           e.printStackTrace();
+       }
+       return ResponseEntity.ok(dto);
    }
 
 
@@ -265,8 +284,9 @@ public class EvenementRestAdmin extends AbstractController<Evenement, EvenementD
         return super.getHistoryDataSize(criteria);
     }
 
-    public EvenementRestAdmin(EvenementAdminService service, EvenementConverter converter) {
+    public EvenementRestAdmin(EvenementAdminService service, EvenementConverter converter, SocketIOServer socketIOServer) {
         super(service, converter);
+        this.socketIOServer = socketIOServer;
     }
 
     @Autowired
@@ -277,5 +297,6 @@ public class EvenementRestAdmin extends AbstractController<Evenement, EvenementD
 
     @Autowired
     EvenementAdminService evenementAdminService;
+    private final SocketIOServer socketIOServer;
 
 }

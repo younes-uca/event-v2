@@ -9,12 +9,12 @@ import java.util.Date;
 public class Message {
 
     private String key;
-    private String type;
-    private String ev;
-    private String user;
-    private String message;
-    private Date dateSent;
-    private boolean isStudent;
-    User student = null;
+//    private String type;
+//    private String ev;
+//    private String user;
+//    private String message;
+//    private Date dateSent;
+//    private boolean isStudent;
+//    User student = null;
 
 }
