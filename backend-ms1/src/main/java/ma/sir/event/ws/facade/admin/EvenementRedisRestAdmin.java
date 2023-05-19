@@ -12,6 +12,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+import java.util.List;
+
 @Api("Manages evenement services")
 @RestController
 @RequestMapping("/api/admin/evenement/redis/")
@@ -46,17 +48,17 @@ public class EvenementRedisRestAdmin  {
     }
 
     @GetMapping("/bloc-operatoire/{referenceBloc}")
-    public Flux<EvenementRedis> findAll(@PathVariable String referenceBloc) {
+    public List<EvenementRedis> findAll(@PathVariable String referenceBloc) {
         return evenementAdminRedisService.findAll(referenceBloc);
     }
 
     @GetMapping("/bloc-operatoire/{referenceBloc}/reference/{reference}")
-    public Mono<EvenementRedis> findByReference(@PathVariable String referenceBloc, @PathVariable String reference) {
+    public EvenementRedis findByReference(@PathVariable String referenceBloc, @PathVariable String reference) {
         return evenementAdminRedisService.findByReference(referenceBloc, reference);
     }
 
     @DeleteMapping("/bloc-operatoire/{referenceBloc}/reference/{reference}")
-    public Mono<Long> deleteByReference(@PathVariable String referenceBloc, @PathVariable String reference) {
+    public Long deleteByReference(@PathVariable String referenceBloc, @PathVariable String reference) {
         return evenementAdminRedisService.deleteByReference(referenceBloc, reference);
     }
 
@@ -64,8 +66,8 @@ public class EvenementRedisRestAdmin  {
     public Flux<ServerSentEvent<EvenementRedis>> streamEvents(@PathVariable String referenceBloc) {
         Sinks.Many<EvenementRedis> sink = evenementAdminRedisService.getOrCreateSink(referenceBloc);
 
-        Flux<EvenementRedis> eventFlux = evenementAdminRedisService.findAll(referenceBloc);
-        return eventFlux.concatWith(sink.asFlux())
+        List<EvenementRedis> eventFlux = evenementAdminRedisService.findAll(referenceBloc);
+        return Flux.fromIterable(eventFlux)
                 .map(e -> ServerSentEvent.<EvenementRedis>builder()
                         .id(e.getReference())
                         .event(e.getDescription())

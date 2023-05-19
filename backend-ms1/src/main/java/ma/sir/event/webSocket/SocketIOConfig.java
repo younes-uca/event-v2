@@ -4,29 +4,23 @@ import com.corundumstudio.socketio.*;
 import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
-import com.google.gson.Gson;
-import io.socket.emitter.Emitter;
 import lombok.extern.log4j.Log4j2;
 import ma.sir.event.bean.core.Evenement;
 import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.dao.facade.core.EvenementDao;
 import ma.sir.event.service.impl.admin.EvenementAdminRedisServiceImpl;
+import ma.sir.event.ws.converter.EvenementRedisConverter;
 import ma.sir.event.zynerator.security.bean.User;
-import org.apache.poi.ss.formula.functions.Even;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import io.socket.client.Socket;
 
 @CrossOrigin("*")
 @Component
@@ -40,6 +34,7 @@ public class SocketIOConfig {
     private EvenementDao evenementDao;
     @Autowired
     private EvenementAdminRedisServiceImpl evenementAdminRedisService;
+
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
@@ -62,7 +57,7 @@ public class SocketIOConfig {
 //            client.sendEvent("matched_objects", matchedObjects);
 //            System.out.println("matchedObjects = " + matchedObjects);
 //        });
-        server.addEventListener("search_objects",String.class,onSendMessageNew);
+        server.addEventListener("search_objects", String.class, onSendMessageNew);
         server.addConnectListener(new ConnectListener() {
             @Override
             public void onConnect(SocketIOClient client) {
@@ -111,11 +106,48 @@ public class SocketIOConfig {
         return server;
     }
 
-    private List<Evenement> searchObjectsByReference(String ref) {
-        // chercher dans redis
-        // si redis vide ==> chercher dans la bd et remplir redi
-        // return dakechi mn redis
-        return evenementDao.findBySalleBlocOperatoirReference(ref);
+    private List<EvenementRedis> searchObjectsByReference(String ref) {
+        List<EvenementRedis> result = searchObjectsByReferenceInRedis(ref);
+        if (result != null && !result.isEmpty()) {
+            return (result);
+        } else {
+            List<EvenementRedis> evenementRedis = retrieveFromDatabase(ref);
+            if (!evenementRedis.isEmpty()) {
+                Map<String, List<EvenementRedis>> evenementRedisMap = new HashMap<>();
+                evenementRedisMap.put(ref, evenementRedis);
+                redisTemplate.opsForHash()
+                        .putAll(ref, evenementRedisMap);
+                return evenementRedis;
+            } else {
+                return Collections.emptyList();
+            }
+        }
+    }
+
+    private List<EvenementRedis> retrieveFromDatabase(String ref) {
+        List<Evenement> evenementList = evenementDao.findBySalleBlocOperatoirReference(ref);
+        List<EvenementRedis> evenementRedisList = convert(evenementList);
+
+        if (!evenementRedisList.isEmpty()) {
+            for (EvenementRedis evenementRedis : evenementRedisList) {
+                redisTemplate.opsForHash()
+                        .put(ref, String.valueOf(evenementRedis.getReference()), evenementRedis)
+                ;
+            }
+        }
+        log.info("*******************retreive from data base ***************** ");
+        return evenementRedisList;
+    }
+
+
+    public List<EvenementRedis> searchObjectsByReferenceInRedis(String reference) {
+        log.info("*******************retrieve from Redis***************** ");
+        List<EvenementRedis> result = new ArrayList<>();
+
+        List<Object> values =  redisTemplate.opsForHash().values(reference);
+
+        return result;
+
     }
 
 
@@ -131,53 +163,7 @@ public class SocketIOConfig {
         ackRequest.sendAckData("You are disconnected");
         log.error(user.getUsername() + " disconnected");
     };
-//    public DataListener<String> onSendMessage = new DataListener<String>() {
-//        @Override
-//        public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
-//            Message messageObject = new Gson().fromJson(message, Message.class);
-//            log.info(messageObject.getKey());
-//
-//            // Convert the message to a byte array
-//            byte[] messageBytes = message.getBytes();
-//
-//            // Get the size of the message in bytes
-//            int messageSize = messageBytes.length;
-//            System.out.println("messageSize = " + messageSize);
-//
-//            /**
-//             * Sending message to target user
-//             * target user should subscribe the socket event with his/her name.
-//             * Send the same payload to user
-//             */
-//            List<String> clientId = sessions.get(messageObject.getKey());
-//            for (String str : clientId
-//            ) {
-//                Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
-//                        d.getHandshakeData().getSingleUrlParam("userId").equals(str));
-//                SocketIOClient ioClient;
-//                try {
-//                    ioClient = clientStream.findAny().get();
-//                } catch (NoSuchElementException e) {
-//                    e.printStackTrace();
-//                    log.error("Client not found !");
-//                    return;
-//                }
-//                HandshakeData handshakeData = ioClient.getHandshakeData();
-//                String userId = handshakeData.getSingleUrlParam("userId");
-//                String key = handshakeData.getSingleUrlParam("key");
-//                System.out.println("------------INFORMATION OF CLIENT ------------------------------------");
-//                System.out.println("key = " + key);
-//                System.out.println("userID = " + userId);
-//                System.out.println("----------------------------------------------------------------------");
-//
-//            }
-//
-//            /**
-//             * After sending message to target user we can send acknowledge to sender
-//             */
-//            acknowledge.sendAckData("Message send to target user successfully");
-//        }
-//    };
+
     public DataListener<String> onSendMessageNew = new DataListener<String>() {
         @Override
         public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
@@ -199,12 +185,33 @@ public class SocketIOConfig {
                 System.out.println("------------INFORMATION OF CLIENT ------------------------------------");
                 System.out.println("key = " + key);
                 System.out.println("----------------------------------------------------------------------");
-                List<Evenement> matchedObjects = searchObjectsByReference(key);
+                List<EvenementRedis> evenementRediss = searchObjectsByReference(key);
+                List<Evenement> matchedObjects = convertToItem(evenementRediss);
                 ioClient.sendEvent("matched_objects", matchedObjects);
             }
             acknowledge.sendAckData("Message send to target user successfully");
         }
     };
+
+    private List<Evenement> convertToItem(List<EvenementRedis> evenementRediss) {
+        List<Evenement> res = new ArrayList<>();
+        if (evenementRediss != null) {
+            for (EvenementRedis evenementRedis : evenementRediss) {
+                res.add(evenementRedisConverter.toItem(evenementRedis));
+            }
+        }
+        return res;
+    }
+
+    private List<EvenementRedis> convert(List<Evenement> evenementList) {
+        List<EvenementRedis> res = new ArrayList<>();
+        if (evenementList != null) {
+            for (Evenement evenement : evenementList) {
+                res.add(evenementRedisConverter.toDto(evenement));
+            }
+        }
+        return res;
+    }
 
 
     @PreDestroy
@@ -215,4 +222,9 @@ public class SocketIOConfig {
     public List<String> getConnectedUsers(String key) {
         return sessions.get(key);
     }
+
+    @Autowired
+    private RedisTemplate<String,Object> redisTemplate;
+    @Autowired
+    private EvenementRedisConverter evenementRedisConverter;
 }

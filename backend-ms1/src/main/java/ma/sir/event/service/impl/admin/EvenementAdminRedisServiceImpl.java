@@ -5,11 +5,13 @@ import ma.sir.event.bean.core.EvenementRedis;
 import ma.sir.event.ws.dto.BlocOperatoirDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EvenementAdminRedisServiceImpl {
 
     @Autowired
-    private ReactiveRedisTemplate<String, EvenementRedis> template;
+    private RedisTemplate redisTemplate;
 
     private final Map<String, Sinks.Many<EvenementRedis>> sinksMap = new ConcurrentHashMap<>();//store sinks, each bloc has its own sink ;-))
 
@@ -38,10 +40,9 @@ public class EvenementAdminRedisServiceImpl {
 
     public Mono<EvenementRedis> save(EvenementRedis evenement) {
         if (getBlocOperatoir(evenement) != null) {
-            template.opsForHash()
+            redisTemplate.opsForHash()
                     .put(getBlocOperatoirReference(evenement), String.valueOf(evenement.getReference()), evenement)
-                    .thenReturn(evenement)
-                    .subscribe();
+                    ;
 
             sendEvent(evenement);
         }
@@ -50,21 +51,19 @@ public class EvenementAdminRedisServiceImpl {
         return Mono.empty();
     }
 
-    public Flux<EvenementRedis> findAll(String referenceBloc) {
-        return template.opsForHash().values(referenceBloc)
-                .map(object -> (EvenementRedis) object);
+    public List<EvenementRedis> findAll(String referenceBloc) {
+        return redisTemplate.opsForHash().values(referenceBloc)
+                ;
     }
 
 
-    public Mono<EvenementRedis> findByReference(String referenceBloc, String reference) {
-        return template.opsForHash().get(referenceBloc, reference)
-                .map(obj -> (EvenementRedis) obj)
-                .switchIfEmpty(Mono.empty());
+    public EvenementRedis findByReference(String referenceBloc, String reference) {//TODO reveser
+        return (EvenementRedis) redisTemplate.opsForHash().get(referenceBloc, reference);
     }
 
 
-    public Mono<Long> deleteByReference(String referenceBloc, String reference) {
-        return template.opsForHash().remove(referenceBloc, reference);
+    public Long deleteByReference(String referenceBloc, String reference) {
+        return redisTemplate.opsForHash().delete(referenceBloc, reference);
     }
 
     private BlocOperatoirDto getBlocOperatoir(EvenementRedis evenement) {
