@@ -30,7 +30,8 @@ export class EvenementListAdminComponent extends AbstractListController<Evenemen
     salles: Array<SalleDto>;
     evenementStates: Array<EvenementStateDto>;
     blocOperatoires: Array<BlocOperatoirDto>;
-    private selectedBloc: any;
+    selectedBloc: any;
+    bloc:any;
 
     constructor(evenementService: EvenementService, private blocOperatoirService: BlocOperatoirService, private webSocketService: WebsocketService, private salleService: SalleService, private evenementStateService: EvenementStateService
         , private webSocketS: WebSocketService) {
@@ -41,7 +42,6 @@ export class EvenementListAdminComponent extends AbstractListController<Evenemen
     socket: Socket;
 
     ngOnInit(): void {
-        this.webSocketS.openWebSocket();
         this.findPaginatedByCriteria();
         this.initExport();
         this.initCol();
@@ -136,15 +136,20 @@ export class EvenementListAdminComponent extends AbstractListController<Evenemen
 
 
     public onBlocSelected() {
-        this.subscribeToEventStream(this.selectedBloc.reference);
+        // this.subscribeToEventStream(this.selectedBloc.reference);
     }
+    getSelectedBloc():string{
+        return this.selectedBloc.reference
+}
 
 
     async openWebS() {
+        await this.webSocketS.openWebSocket(this.selectedBloc.reference);
         console.log(this.selectedBloc.reference);
         await this.webSocketS.earchObjectsByReference(this.selectedBloc.reference);
         this.items = await this.webSocketS.getEvents() ;
         console.log(this.items)// Add 'await' keyword
+        console.log("finn open "+this.selectedBloc.reference)
     }
 
 

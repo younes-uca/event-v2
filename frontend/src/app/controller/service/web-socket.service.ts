@@ -8,6 +8,12 @@ import {Observable} from 'rxjs';
 import {User} from "../../zynerator/security/User.model";
 import {AuthService} from "../../zynerator/security/Auth.service";
 import {EvenementDto} from "../model/Evenement.model";
+import {AbstractListController} from "../../zynerator/controller/AbstractListController";
+import {EvenementCriteria} from "../criteria/EvenementCriteria.model";
+import {EvenementService} from "./Evenement.service";
+import {
+    EvenementListAdminComponent
+} from "../../module/admin/view/event/evenement-admin/list-admin/evenement-list-admin.component";
 // CommonJS
 // @ts-ignore
 const io = require('socket.io-client');
@@ -39,7 +45,8 @@ export class WebSocketService {
     private _seconde = 59;
 
     constructor(private authService:AuthService,
-                private http: HttpClient
+                private http: HttpClient,
+                private event:EvenementListAdminComponent
 
     ) {
     }
@@ -103,8 +110,8 @@ export class WebSocketService {
 
 
 
-    public openWebSocket() {
-        this.openSession();
+    public openWebSocket(key:string) {
+        this.openSession(key);
         this.onConnect();
         this.onConnection();
         this.onDisconnect();
@@ -119,13 +126,14 @@ export class WebSocketService {
     }
 
 
-    openSession() {
-        // const id = this.authService.getUserFromLocalCache().id;
+    openSession(key:string) {
+        // const id = this.authService.authenticatedUser.id;
+        // console.log(id)
         // const myToken = localStorage.getItem('token');
         console.log('----------------------------------OPEN SESSION ----------------------------------------');
         console.log(this.socket?.connected);
         console.log('-----------------------------------------------------------------------------------------');
-        this.socket = io(environment.socketUrl , {
+        this.socket = io(environment.socketUrl+ '?key=' + key , {
             autoConnect: true,
             transports: ['websocket'],
             pingInterval: 25000, // send a ping message every 25 seconds
@@ -141,6 +149,10 @@ export class WebSocketService {
             this.socket.on('matched_objects', (matchedObjects: EvenementDto[]) => {
                 console.log('Received list of objects:', matchedObjects);
                 resolve(matchedObjects);
+                if (matchedObjects != null && !Array.isArray(matchedObjects) ) {
+                    this.event.items.push(matchedObjects);
+
+                }
             });
         });
     }

@@ -52,6 +52,11 @@ import {SelectButtonModule} from "primeng/selectbutton";
 import {TranslateHttpLoader} from "@ngx-translate/http-loader";
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {ServiceLocator} from './zynerator/service/ServiceLocator';
+import {WebSocketService} from "./controller/service/web-socket.service";
+import {AbstractListController} from "./zynerator/controller/AbstractListController";
+import {
+  EvenementListAdminComponent
+} from "./module/admin/view/event/evenement-admin/list-admin/evenement-list-admin.component";
 
 
 export function HttpLoaderFactory(http: HttpClient) {
@@ -121,6 +126,7 @@ providers: [
   MessageService,
   ConfirmationService,
   DatePipe,
+    EvenementListAdminComponent
 ],
 bootstrap: [AppComponent],
   exports: [
