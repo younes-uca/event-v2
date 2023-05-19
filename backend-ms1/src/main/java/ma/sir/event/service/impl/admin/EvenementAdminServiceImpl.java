@@ -2,6 +2,7 @@ package ma.sir.event.service.impl.admin;
 
 import com.corundumstudio.socketio.SocketIOServer;
 import ma.sir.event.bean.core.Evenement;
+import ma.sir.event.bean.core.Salle;
 import ma.sir.event.bean.history.EvenementHistory;
 import ma.sir.event.dao.criteria.core.EvenementCriteria;
 import ma.sir.event.dao.criteria.history.EvenementHistoryCriteria;

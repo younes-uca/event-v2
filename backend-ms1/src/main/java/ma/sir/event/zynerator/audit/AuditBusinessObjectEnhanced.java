@@ -20,7 +20,6 @@ import javax.persistence.MappedSuperclass;
 @EntityListeners(EntityListener.class)
 public class AuditBusinessObjectEnhanced extends AuditBusinessObject {
 
-    protected Long etablissementId;
     protected Boolean actif = false;
     protected String hl7;
     protected Long ordre ;
@@ -49,11 +48,5 @@ public class AuditBusinessObjectEnhanced extends AuditBusinessObject {
         this.ordre = ordre;
     }
 
-    public Long getEtablissementId() {
-        return etablissementId;
-    }
 
-    public void setEtablissementId(Long etablissementId) {
-        this.etablissementId = etablissementId;
-    }
 }

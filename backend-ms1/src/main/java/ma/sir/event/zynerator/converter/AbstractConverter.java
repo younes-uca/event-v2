@@ -1,9 +1,6 @@
 package ma.sir.event.zynerator.converter;
 
 
-import ma.sir.event.zynerator.bean.Etablissement;
-import ma.sir.event.zynerator.dto.EtablissementDto;
-
 import ma.sir.event.zynerator.util.ListUtil;
 import ma.sir.event.zynerator.audit.AuditBusinessObject;
 import ma.sir.event.zynerator.bean.BusinessObject;
@@ -42,17 +39,11 @@ public abstract class AbstractConverter<T extends BusinessObject, DTO extends Ba
     }
 
     public void convertEtablissement(T item, DTO dto) {
-        if (dto.getEtablissementDto() != null && dto.getEtablissementDto().getId() != null) {
-            item.setEtablissement(new Etablissement());
-            item.getEtablissement().setId(dto.getEtablissementDto().getId());
-        }
+
     }
 
     public void convertEtablissement(DTO dto, T item) {
-        if (item.getEtablissement() != null && item.getEtablissement().getId() != null) {
-            dto.setEtablissementDto(new EtablissementDto());
-            dto.getEtablissementDto().setId(item.getEtablissement().getId());
-        }
+
     }
 
     public List<T> toItem(List<DTO> dtos) {

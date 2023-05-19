@@ -8,7 +8,6 @@ public class CodeCriteria extends BaseCriteria {
 
     protected String code;
     protected String codeLike;
-    protected Long etablissementId;
 
 
     /**
@@ -31,13 +30,7 @@ public class CodeCriteria extends BaseCriteria {
         this.code = code;
     }
 
-    public Long getEtablissementId() {
-        return this.etablissementId;
-    }
 
-    public void setEtablissementId(Long etablissementId) {
-        this.etablissementId = etablissementId;
-    }
 
 
 }

@@ -1,11 +1,11 @@
 package ma.sir.event.dao.facade.core;
 
-import org.springframework.cache.annotation.Cacheable;
+import ma.sir.event.bean.core.EvenementRedis;
 import org.springframework.data.jpa.repository.Query;
 import ma.sir.event.zynerator.repository.AbstractRepository;
 import ma.sir.event.bean.core.Evenement;
 import org.springframework.stereotype.Repository;
-import ma.sir.event.bean.core.Evenement;
+
 import java.util.List;
 
 

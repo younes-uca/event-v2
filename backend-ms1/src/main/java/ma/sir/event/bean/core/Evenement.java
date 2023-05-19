@@ -10,7 +10,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ma.sir.event.zynerator.audit.AuditBusinessObject;
@@ -111,6 +111,7 @@ public class Evenement   extends AuditBusinessObject implements Serializable {
     }
 
     @Transient
+    @JsonIgnore
     public String getLabel() {
         label = reference;
         return label;
