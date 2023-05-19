@@ -15,6 +15,7 @@ import ma.sir.event.service.impl.admin.EvenementAdminRedisServiceImpl;
 import ma.sir.event.ws.converter.EvenementRedisConverter;
 import ma.sir.event.zynerator.security.bean.User;
 import org.apache.poi.ss.formula.functions.Even;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -24,9 +25,12 @@ import reactor.core.publisher.Flux;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
 import io.socket.client.Socket;
+import reactor.core.publisher.Mono;
 
 @CrossOrigin("*")
 @Component
@@ -40,6 +44,7 @@ public class SocketIOConfig {
     private EvenementDao evenementDao;
     @Autowired
     private EvenementAdminRedisServiceImpl evenementAdminRedisService;
+
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
@@ -62,7 +67,7 @@ public class SocketIOConfig {
 //            client.sendEvent("matched_objects", matchedObjects);
 //            System.out.println("matchedObjects = " + matchedObjects);
 //        });
-        server.addEventListener("search_objects",String.class,onSendMessageNew);
+        server.addEventListener("search_objects", String.class, onSendMessageNew);
         server.addConnectListener(new ConnectListener() {
             @Override
             public void onConnect(SocketIOClient client) {
@@ -124,7 +129,7 @@ public class SocketIOConfig {
         ackRequest.sendAckData("You are disconnected");
         log.error(user.getUsername() + " disconnected");
     };
-//    public DataListener<String> onSendMessage = new DataListener<String>() {
+    //    public DataListener<String> onSendMessage = new DataListener<String>() {
 //        @Override
 //        public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
 //            Message messageObject = new Gson().fromJson(message, Message.class);
@@ -175,8 +180,7 @@ public class SocketIOConfig {
         @Override
         public void onData(SocketIOClient client, String message, AckRequest acknowledge) throws Exception {
             List<String> clientId = sessions.get(message);
-            for (String str : clientId
-            ) {
+            for (String str : clientId) {
                 Stream<SocketIOClient> clientStream = server.getAllClients().stream().filter(d ->
                         d.getHandshakeData().getSingleUrlParam("key").equals(str));
                 SocketIOClient ioClient;
@@ -192,12 +196,16 @@ public class SocketIOConfig {
                 System.out.println("------------INFORMATION OF CLIENT ------------------------------------");
                 System.out.println("key = " + key);
                 System.out.println("----------------------------------------------------------------------");
+
+
                 List<Evenement> matchedObjects = convertToItem(searchObjectsByReference(key));
                 //List<EvenementRedis> matchedObjects = searchObjectsByReference(key);
                 ioClient.sendEvent("matched_objects", matchedObjects);
             }
             acknowledge.sendAckData("Message send to target user successfully");
         }
+
+
     };
 
 
@@ -209,7 +217,6 @@ public class SocketIOConfig {
     public List<String> getConnectedUsers(String key) {
         return sessions.get(key);
     }
-
 
 
     //************************************** UPDATE ***************************
@@ -242,6 +249,14 @@ public class SocketIOConfig {
         }
     }
     //2- ASSOCIATED MODIF
+
+
+    public Flux<EvenementRedis> searchObjectsByReferenceInRedis(String reference) {
+        return template.opsForHash().get(String.valueOf(reference), reference)
+                .flux()
+                .map(object -> (EvenementRedis) object)
+                .onErrorResume(throwable -> Flux.empty());
+    }
 
 
     private List<EvenementRedis> convert(List<Evenement> evenementList) {
@@ -279,15 +294,9 @@ public class SocketIOConfig {
         return evenementRedisList;
     }
 
-
-
-    public Flux<EvenementRedis> searchObjectsByReferenceInRedis(String reference) {
-        return template.opsForHash().get(String.valueOf(reference), reference)
-                .flux()
-                .map(object -> (EvenementRedis) object);
-    }
     @Autowired
     private EvenementRedisConverter evenementRedisConverter;
+
     @Autowired
     private ReactiveRedisTemplate<String, EvenementRedis> template;
 
